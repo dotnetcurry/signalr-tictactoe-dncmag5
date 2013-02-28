@@ -4,76 +4,205 @@
 /// <reference path="../knockout-2.1.0.debug.js" />
 /// <reference path="../ko-protected-observable.js" />
 
+var gameViewModel = function ()
+{
+    var self = this;
+
+    self.Users = ko.observableArray([]);
+    self.Game = {};
+    self.CurrentPlayer = ko.observable('Game not started');
+
+    self.showChallenge = function (item)
+    {
+        if (item.ConnectionStatus < 3)
+        {
+            return "display:visible";
+        }
+        else
+        {
+            return "display:none";
+        }
+    }
+}
+
 $(function ()
 {
-    var hub = $.connection.chirpyRHub,
-    $msgs = $("#chirpStream");
-    hub.NewChirp = function (chirp)
-    {
-
-        addChirp(chirp);
-    }
-
-    function addChirp(chirp)
-    {
-        viewModel.chirps.unshift(new chirpItem(chirp.Text,
-                          chirp.Id, chirp.ChirpBy.Gravataar,
-                          chirp.ChirpBy.UserId));
-    }
-
-    $.connection.hub.start();
-    var data = [
-        new chirpItem(
-            "Real cool .NET site www.dotnetcurry.com",
-            1,
-            'http://www.gravatar.com/avatar/8a00acdf326a8a8806ccc662a136c438.jpg',
-            'minal'),
-        new chirpItem(
-            "Loads of web-dev tips and tricks at www.devcurry.com",
-            2,
-            "http://www.gravatar.com/avatar/147bacafcdb00d67d3336ecdf4078ba5.png",
-            'sumit'),
-        new chirpItem("Super hot, July Edition of DNC Magazine",
-            3,
-            "http://www.gravatar.com/avatar/0960a6d6c7c472d54d33f77f8048fa29.jpg",
-            'suprotim'),
-    ];
-
-    function chirpItem(text, id, gravatar, by)
-    {
-        return {
-            Text: text,
-            Id: id,
-            GravatarUrl: gravatar,
-            By: by
-        };
-    }
-
-    var viewModel = {
-        // data
-        chirps: ko.observableArray(data),
-        currentUser: ko.observable({ UserName: "unknown", OldPassword: "" })
-    }
+    var viewModel = new gameViewModel();
     ko.applyBindings(viewModel);
-
-    $.getJSON("Api/ChirpyR", null, function (data)
+    var canvas = document.getElementById("gameCanvas");
+    if (canvas)
     {
-        for (var i in data)
+        var hSpacing = canvas.width / 3;
+        var vSpacing = canvas.height / 3;
+    }
+    var hub = $.connection.GameNotificationHub;
+
+    hub.client.DrawPlay = function (rowCol, game, letter)
+    {
+        viewModel.Game = game;
+        var row = rowCol.row;
+        var col = rowCol.col;
+        var hCenter = (col - 1) * hSpacing + (hSpacing / 2);
+        var vCenter = (row - 1) * vSpacing + (vSpacing / 2);
+        writeMessage(canvas, letter, hCenter, vCenter);
+        if (game.GameStatus == 0)
         {
-            addChirp(i);
+            viewModel.CurrentPlayer(game.NextTurn);
+        }
+        else
+        {
+            viewModel.CurrentPlayer(game.Message);
+            alert("Game Over - " + game.Message);
+            location.reload();
+
+        }
+    };
+
+    hub.client.joined = function (connection, dateTime)
+    {
+        viewModel.Users.remove(function (item) { return item.UserId == connection.UserId })
+        viewModel.Users.push(connection);
+    };
+
+    hub.client.getChallengeResponse = function (connectionId, userId)
+    {
+        var cnf = confirm('You have been challenged to a game of Tic-Tac-ToR by \'' + userId + '\'. Ok to Accept!')
+        if (cnf)
+        {
+            hub.server.challengeAccepted(connectionId);
+        }
+        else
+        {
+            hub.server.challengeRefused(connectionId);
+        }
+    };
+
+    hub.client.updateSelf = function (connections, connectionName)
+    {
+        for (var i = 0; i < connections.length; i++)
+        {
+            if (connections[i].UserId != connectionName)
+            {
+                viewModel.Users.push(connections[i]);
+            }
+        }
+    };
+
+    hub.client.beginGame = function (gameDetails)
+    {
+       
+        if (gameDetails.User1Id.UserId == clientId ||
+            gameDetails.User2Id.UserId == clientId)
+        {
+            clearCanvas();
+            viewModel.Game = gameDetails;
+            viewModel.CurrentPlayer(gameDetails.NextTurn);
+        }
+        var oldArray = viewModel.Users;
+        viewModel.Users.remove(function (item) { return item.UserId == gameDetails.User1Id.UserId });
+        viewModel.Users.remove(function (item) { return item.UserId == gameDetails.User2Id.UserId });
+    };
+
+    hub.client.leave = function (connectionId)
+    {
+    };
+    
+    $.connection.hub.start().done(function ()
+    {
+        var canvasContext;
+        $("#activeUsersList").delegate(".challenger", "click", function ()
+        {
+            var challengeTo = ko.dataFor(this);
+            hub.server.challenge(challengeTo.ConnectionId, clientId);
+        });
+
+        if (canvas && canvas.getContext)
+        {
+            canvasContext = canvas.getContext('2d');
+            var rect = canvas.getBoundingClientRect();
+            canvas.height = rect.height;
+            canvas.width = rect.width;
+            hSpacing = canvas.width / 3;
+            vSpacing = canvas.height / 3;
+
+            canvas.addEventListener('click', function (evt)
+            {
+                if (viewModel.CurrentPlayer() == clientId)
+                {
+                    var rowCol = getRowCol(evt);
+                    rowCol.Player = 'O';
+                    hub.server.gameMove(viewModel.Game.GameId, rowCol);
+                }
+            }, false);
+
+            drawGrid(canvasContext);
+        }
+
+        function getRowCol(evt)
+        {
+            var hSpacing = canvas.width / 3;
+            var vSpacing = canvas.height / 3;
+            var mousePos = getMousePos(canvas, evt);
+            return {
+                row: Math.ceil(mousePos.y / vSpacing),
+                col: Math.ceil(mousePos.x / hSpacing)
+            }
+        }
+
+        function getMousePos(canvas, evt)
+        {
+
+            var rect = canvas.getBoundingClientRect();
+            return {
+                x: evt.clientX - rect.left,
+                y: evt.clientY - rect.top
+            };
         }
     });
 
-    $(document).on("click",
-        "#postChirp", function ()
+    function clearCanvas()
+    {
+        if (canvas && canvas.getContext)
         {
-            var chirp = {
-                "Text": $("#chirpText").val()
-            };
-            ajaxAdd("/Api/ChirpyR",
-                ko.toJSON(chirp), function (data)
-                {
-                });
-            $("#chirpText").val("");
-        });
+            var canvasContext = canvas.getContext('2d');
+            var rect = canvas.getBoundingClientRect();
+            canvas.height = rect.height;
+            canvas.width = rect.width;
+
+            if (canvasContext)
+            {
+                canvasContext.clearRect(rect.left, rect.top, rect.width, rect.height);
+            }
+            drawGrid(canvasContext);
+        }
+    }
+
+    function drawGrid(canvasContext)
+    {
+        var hSpacing = canvas.width / 3;
+        var vSpacing = canvas.height / 3;
+        canvasContext.lineWidth = "2.0";
+        for (var i = 1; i < 3; i++)
+        {
+            canvasContext.beginPath();
+            canvasContext.moveTo(0, vSpacing * i);
+            canvasContext.lineTo(canvas.width, vSpacing * i);
+            canvasContext.stroke();
+
+            canvasContext.beginPath();
+            canvasContext.moveTo(hSpacing * i, 0);
+            canvasContext.lineTo(hSpacing * i, canvas.height);
+            canvasContext.stroke();
+        }
+    }
+
+    function writeMessage(canvas, message, x, y)
+    {
+        var canvasContext = canvas.getContext('2d');
+        canvasContext.font = '40pt Calibri';
+        canvasContext.fillStyle = 'red';
+        var textSize = canvasContext.measureText(message);
+        canvasContext.fillText(message, x - (textSize.width / 2), y + 10);
+
+    }
 });
