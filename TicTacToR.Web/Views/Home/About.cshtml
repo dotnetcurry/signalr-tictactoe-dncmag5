@@ -1,34 +1,48 @@
 ﻿@{
-    ViewBag.Title = "About";
+    ViewBag.Title = "About Tic-Tac-ToR";
 }
 
 <hgroup class="title">
-    <h1>@ViewBag.Title.</h1>
     <h2>@ViewBag.Message</h2>
 </hgroup>
 
 <article>
     <p>
-        Use this area to provide additional information.
+        You can log in to play. We recommend you use Twitter (so that we don't store your password).
     </p>
 
     <p>
-        Use this area to provide additional information.
+
+        USER AGREEMENT <br />
+        <ul>
+            <li>
+                We as in DotNetCurry/DNC Magazine/A2Z Knowledge Visuals Pvt. Ltd. promise not to use your login ID (in case you register for a new account)
+                for any other purpose than letting you into the game.
+            </li>
+            <li>
+                We do not have access to your Twitter Credentials.
+            </li>
+            <li>
+                We will not send out any tweets on your behalf, the OAuth permissions we use is a readonly one and can only read Tweets. That said we don't do
+                that either. If you log in using Twitter the only thing that happens is you get to play the game.
+            </li>
+            <li>
+                You as in the player/person logging into http://tictactor.apphb.com agree not to Hack it/Break it/Mis-use it, in fact do anything other than
+                the sole intent of playing Tic-Tac-Toe here. This is just a demo for educational purpose and for showcasing new technologies. Please do not 
+                be offended or take this too seriously if you don't like the rules.
+            </li>
+            <li>
+                By logging in to play the game you agree not to file a lawsuit against us/participate in class action lawsuit EVER for whatever reasons!
+            </li>
+        </ul>
     </p>
 
-    <p>
-        Use this area to provide additional information.
-    </p>
 </article>
 
 <aside>
-    <h3>Aside Title</h3>
-    <p>
-        Use this area to provide additional information.
-    </p>
+    <h3>Quick Links</h3>
     <ul>
         <li>@Html.ActionLink("Home", "Index", "Home")</li>
         <li>@Html.ActionLink("About", "About", "Home")</li>
-        <li>@Html.ActionLink("Contact", "Contact", "Home")</li>
     </ul>
 </aside>
