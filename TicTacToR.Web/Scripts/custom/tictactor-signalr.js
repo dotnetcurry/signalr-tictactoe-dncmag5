@@ -9,12 +9,14 @@ var gameViewModel = function ()
     var self = this;
 
     self.Users = ko.observableArray([]);
+    self.UserConnections = [];
     self.Game = {};
     self.CurrentPlayer = ko.observable('Game not started');
+    self.ChallengeDisabled = ko.observable(false);
 
     self.showChallenge = function (item)
     {
-        if (item.ConnectionStatus < 3)
+        if (self.ChallengeDisabled() != true)
         {
             return "display:visible";
         }
@@ -65,6 +67,8 @@ $(function ()
 
     hub.client.getChallengeResponse = function (connectionId, userId)
     {
+        viewModel.ChallengeDisabled(true);
+        refreshConnections();
         var cnf = confirm('You have been challenged to a game of Tic-Tac-ToR by \'' + userId + '\'. Ok to Accept!')
         if (cnf)
         {
@@ -73,8 +77,17 @@ $(function ()
         else
         {
             hub.server.challengeRefused(connectionId);
+            viewModel.ChallengeDisabled(false);
+            refreshConnections();
         }
     };
+
+    function refreshConnections()
+    {
+        var conns = viewModel.Users;
+        var oldItems = viewModel.Users.removeAll();
+        viewModel.Users(oldItems);
+    }
 
     hub.client.updateSelf = function (connections, connectionName)
     {
@@ -87,10 +100,27 @@ $(function ()
         }
     };
 
+    hub.client.challengeRefused = function ()
+    {
+        viewModel.ChallengeDisabled(false);
+        viewModel.CurrentPlayer('Challenge not accepted!');
+        refreshConnections();
+    }
+
+
+    hub.client.waitForResponse = function (userId)
+    {
+        viewModel.ChallengeDisabled(false);
+        viewModel.CurrentPlayer('Waiting for ' + userId + ' to accept challenge');
+        refreshConnections();
+    };
+
     hub.client.rejoinGame = function (connections, connectionName, gameDetails)
     {
         if (gameDetails != null)
         {
+            viewModel.ChallengeDisabled(false);
+            refreshConnections();
             viewModel.Game = gameDetails;
 
             viewModel.CurrentPlayer(gameDetails.NextTurn);
@@ -113,11 +143,10 @@ $(function ()
                         var vCenter = (row) * vSpacing + (vSpacing / 2);
                         writeMessage(canvas, letter, hCenter, vCenter);
                     }
-                }
-                
-
+                }              
             }
         }
+        viewModel.Users = ko.observableArray([]);
         for (var i = 0; i < connections.length; i++)
         {
             if (connections[i].UserId != connectionName)
@@ -131,7 +160,8 @@ $(function ()
 
     hub.client.beginGame = function (gameDetails)
     {
-       
+        viewModel.ChallengeDisabled(false);
+        refreshConnections();
         if (gameDetails.User1Id.UserId == clientId ||
             gameDetails.User2Id.UserId == clientId)
         {
@@ -147,6 +177,7 @@ $(function ()
 
     hub.client.leave = function (connectionId)
     {
+        viewModel.Users().remove(function (item) { return item.ConnectionId == connectionId });
     };
     
     $.connection.hub.start().done(function ()
@@ -154,8 +185,12 @@ $(function ()
         var canvasContext;
         $("#activeUsersList").delegate(".challenger", "click", function ()
         {
+            viewModel.ChallengeDisabled(true);
             var challengeTo = ko.dataFor(this);
+            viewModel.CurrentPlayer('Waiting for ' + challengeTo.UserId + ' to accept challenge');
             hub.server.challenge(challengeTo.ConnectionId, clientId);
+            refreshConnections();
+
         });
 
         if (canvas && canvas.getContext)

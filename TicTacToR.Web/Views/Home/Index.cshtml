@@ -51,8 +51,8 @@
                                 <span data-bind="text: UserId"></span>
                             </div>
                             <div class="game-list-item-button">
-                                <div data-bind="attr: { style: $parent.showChallenge }">
-                                    <button
+                                <div>
+                                    <button data-bind="attr: { disabled: $parent.ChallengeDisabled() }"
                                         class="challenger game-list-button">
                                         Challenge
                                     </button>

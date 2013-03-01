@@ -24,6 +24,7 @@ namespace TicTacToR.Web.SignalrHubs
         public void Challenge(string connectionId, string userId)
         {
             this.Clients.Client(connectionId).getChallengeResponse(Context.ConnectionId, userId);
+            this.Clients.Caller.waitForResponse(userId);
         }
 
         /// <summary>
@@ -44,7 +45,7 @@ namespace TicTacToR.Web.SignalrHubs
         /// <param name="connectionId">The Challenger</param>
         public void ChallengeRefused(string connectionId)
         {
-
+            this.Clients.Client(connectionId).challengeRefused();
         }
 
         public void GameMove(string gameGuid, dynamic rowCol)
