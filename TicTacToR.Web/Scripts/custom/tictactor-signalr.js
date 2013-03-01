@@ -110,7 +110,7 @@ $(function ()
 
     hub.client.waitForResponse = function (userId)
     {
-        viewModel.ChallengeDisabled(false);
+        viewModel.ChallengeDisabled(true);
         viewModel.CurrentPlayer('Waiting for ' + userId + ' to accept challenge');
         refreshConnections();
     };
@@ -119,7 +119,7 @@ $(function ()
     {
         if (gameDetails != null)
         {
-            viewModel.ChallengeDisabled(false);
+            viewModel.ChallengeDisabled(true);
             refreshConnections();
             viewModel.Game = gameDetails;
 
@@ -160,7 +160,7 @@ $(function ()
 
     hub.client.beginGame = function (gameDetails)
     {
-        viewModel.ChallengeDisabled(false);
+        viewModel.ChallengeDisabled(true);
         refreshConnections();
         if (gameDetails.User1Id.UserId == clientId ||
             gameDetails.User2Id.UserId == clientId)
