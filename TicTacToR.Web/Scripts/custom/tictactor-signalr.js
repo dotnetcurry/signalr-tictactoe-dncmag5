@@ -54,7 +54,6 @@ $(function ()
             viewModel.CurrentPlayer(game.Message);
             alert("Game Over - " + game.Message);
             location.reload();
-
         }
     };
 
@@ -88,6 +87,48 @@ $(function ()
         }
     };
 
+    hub.client.rejoinGame = function (connections, connectionName, gameDetails)
+    {
+        if (gameDetails != null)
+        {
+            viewModel.Game = gameDetails;
+
+            viewModel.CurrentPlayer(gameDetails.NextTurn);
+            for (var row = 0; row < 3; row++)
+            {
+                for (var col = 0; col < 3; col++)
+                {
+                    var letter = '';
+                    if(gameDetails.GameMatrix[row][col] == 1)
+                    {
+                        letter = 'O';
+                    }
+                    else if(gameDetails.GameMatrix[row][col] == 10)
+                    {
+                        letter = 'X';
+                    }
+                    if (letter != '')
+                    {
+                        var hCenter = (col) * hSpacing + (hSpacing / 2);
+                        var vCenter = (row) * vSpacing + (vSpacing / 2);
+                        writeMessage(canvas, letter, hCenter, vCenter);
+                    }
+                }
+                
+
+            }
+        }
+        for (var i = 0; i < connections.length; i++)
+        {
+            if (connections[i].UserId != connectionName)
+            {
+                viewModel.Users.push(connections[i]);
+            }
+        }
+        viewModel.Users.remove(function (item) { return item.UserId == gameDetails.User1Id.UserId });
+        viewModel.Users.remove(function (item) { return item.UserId == gameDetails.User2Id.UserId });
+    };
+
     hub.client.beginGame = function (gameDetails)
     {
        
@@ -102,6 +143,7 @@ $(function ()
         viewModel.Users.remove(function (item) { return item.UserId == gameDetails.User1Id.UserId });
         viewModel.Users.remove(function (item) { return item.UserId == gameDetails.User2Id.UserId });
     };
+
 
     hub.client.leave = function (connectionId)
     {

@@ -119,7 +119,7 @@ namespace TicTacToR.Web.Game
             }
         }
 
-        internal void UpdateCache(string userId,
+        internal GameDetails UpdateCache(string userId,
             string connectionId, ConnectionStatus status)
         {
             if (_connections.ContainsKey(userId)
@@ -131,6 +131,8 @@ namespace TicTacToR.Web.Game
             {
                 CreateNewUserSession(userId, connectionId);
             }
+            GameDetails gd = _games.Values.LastOrDefault<GameDetails>(g => g.User1Id.UserId == userId || g.User2Id.UserId == userId);
+            return gd;
         }
 
         internal void Disconnect(string connectionId)

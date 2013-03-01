@@ -10,9 +10,15 @@ namespace TicTacToR.Web.Game
         public Guid GameId { get; set; }
         public UserCredential User1Id { get; set; }
         public UserCredential User2Id { get; set; }
-        private int[,] GameMatrix { get; set; }
+        public int[,] GameMatrix { get; set; }
         public string NextTurn { get; set; }
         public string Message { get; set; }
+
+        /// <summary>
+        /// 0 = In Progress
+        /// 1 = Completed With Result
+        /// 2 = Completed, Draw Game
+        /// </summary>
         public int GameStatus { get; set; }
 
         public GameDetails()

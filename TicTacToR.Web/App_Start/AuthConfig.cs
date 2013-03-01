@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.Web.WebPages.OAuth;
 using TicTacToR.Web.Models;
+using System.Configuration;
 
 namespace TicTacToR.Web
 {
@@ -19,8 +20,8 @@ namespace TicTacToR.Web
             //    clientSecret: "");
 
             OAuthWebSecurity.RegisterTwitterClient(
-                consumerKey: "WBuUPmY9y8Kp38s6G8Xsg",
-                consumerSecret: "m0CW16XiXsgtLNeVMyZ1rdmPzxl7DD3I39lqfPJHp38");
+                consumerKey: ConfigurationManager.AppSettings["consumerKey"],
+                consumerSecret: ConfigurationManager.AppSettings["consumerSecret"]);
 
             //OAuthWebSecurity.RegisterFacebookClient(
             //    appId: "",

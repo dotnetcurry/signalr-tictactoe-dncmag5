@@ -64,17 +64,27 @@ namespace TicTacToR.Web.SignalrHubs
         {
             string connectionId = Context.ConnectionId;
             string connectionName = string.Empty;
+            GameDetails gd = null;
             if (Context.User != null && Context.User.Identity != null
                 && Context.User.Identity.IsAuthenticated)
             {
-                Manager.Instance.UpdateCache(
+                gd = Manager.Instance.UpdateCache(
                     Context.User.Identity.Name,
                     Context.ConnectionId,
                     ConnectionStatus.Connected);
                 connectionName = Context.User.Identity.Name;
+                
             }
-            this.Clients.Caller.updateSelf(Manager.Instance.AllUsers(), connectionName);
-
+            if (gd != null && gd.GameStatus == 0)
+            {
+                this.Groups.Add(connectionId, gd.GameId.ToString());
+                this.Clients.Client(connectionId).rejoinGame(Manager.Instance.AllUsers(), connectionName, gd);
+                this.Clients.Group(gd.GameId.ToString()).rejoinGame(Manager.Instance.AllUsers(), connectionName, gd);
+            }
+            else
+            {
+                this.Clients.Caller.updateSelf(Manager.Instance.AllUsers(), connectionName);
+            }
             this.Clients.Others.joined(new
                 {
                     UserId = connectionName,
